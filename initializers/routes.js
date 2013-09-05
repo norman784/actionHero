@@ -80,6 +80,9 @@ var routes = function(api, next){
       var method = i.toLowerCase(); 
       for(var j in rawRoutes[i]){
         var route = rawRoutes[i][j];
+
+        if (!api.params.postVariables[route.action]) api.params.postVariables[route.action] = [];
+
         if(method == "all"){
           ["get", "post", "put", "delete"].forEach(function(verb){
             api.routes.routes[verb].push({ path: route.path, action: route.action });
@@ -87,17 +90,20 @@ var routes = function(api, next){
         }else{
           api.routes.routes[method].push({ path: route.path, action: route.action });
         }
+
         var words = route.path.split("/");
         words.forEach(function(word){
           if(word[0] === ":"){
             var cleanedWord = word.replace(":","");
-            api.params.postVariables.push(cleanedWord);
+            api.params.postVariables[route.action].push(cleanedWord);
           }
         });
+
+        api.params.postVariables[route.action] = api.utils.arrayUniqueify(api.params.postVariables[route.action])
+
         counter++;
       }
     }
-    api.params.postVariables = api.utils.arrayUniqueify(api.params.postVariables)
     api.log(counter + " routes loaded from " + routesFile, "debug", api.routes.routes);
   };
 

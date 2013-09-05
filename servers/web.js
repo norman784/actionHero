@@ -257,6 +257,9 @@ var web = function(api, options, next){
             form[i] = api.configData.servers.web.formOptions[i];
           }
           form.parse(connection.rawConnection.req, function(err, fields, files) {
+            api.routes.processRoute(connection);
+            if(connection.params["action"] == null){ connection.params["action"] = apiPathParts[0]; }
+
             if(err){
               server.log("error processing form: " + String(err), "error");
               connection.error = new Error("There was an error processing this form.");
@@ -264,8 +267,7 @@ var web = function(api, options, next){
               fillParamsFromWebRequest(connection, files);
               fillParamsFromWebRequest(connection, fields);
             }
-            api.routes.processRoute(connection);
-            if(connection.params["action"] == null){ connection.params["action"] = apiPathParts[0]; }
+            
             callback(requestMode);
           });
         }
@@ -286,11 +288,21 @@ var web = function(api, options, next){
   }
 
   var fillParamsFromWebRequest = function(connection, varsHash){
-    api.params.postVariables.forEach(function(postVar){
-      if(varsHash[postVar] !== undefined && varsHash[postVar] != null){ 
-        connection.params[postVar] = varsHash[postVar]; 
+    if (!api.params.postVariables[connection.params["action"]]) return;
+
+    if (api.params.postVariables[connection.params["action"]].indexOf("*") > -1) {
+      for (var postVar in varsHash) {
+        if(varsHash[postVar] !== undefined && varsHash[postVar] != null){ 
+          connection.params[postVar] = varsHash[postVar]; 
+        }
       }
-    });
+    } else {
+      api.params.postVariables[connection.params["action"]].forEach(function(postVar){
+        if(varsHash[postVar] !== undefined && varsHash[postVar] != null){ 
+          connection.params[postVar] = varsHash[postVar]; 
+        }
+      });
+    }
   }
 
   var shouldSendDocumentation = function(connection){

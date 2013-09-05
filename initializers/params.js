@@ -6,6 +6,7 @@ var params = function(api, next){
 
   // special params we will always accept
   api.params.buildPostVariables = function(){
+    api.params.postVariables = {};
     var postVariables = [
       "file",
       "apiVersion",
@@ -17,22 +18,35 @@ var params = function(api, next){
       "roomMatchKey",
       "roomMatchValue"
     ];
+
     for(var i in api.actions.actions){
       for(var j in api.actions.actions[i]){
         var action = api.actions.actions[i][j];
+
+        if (!api.params.postVariables[action.name]) {
+          api.params.postVariables[action.name] = [];
+
+          for (var k in postVariables) {
+            api.params.postVariables[action.name].push(postVariables[k]);
+          }
+        }
+
         if(action.inputs.required.length > 0){
           for(var k in action.inputs.required){
-            postVariables.push(action.inputs.required[k]);
+            api.params.postVariables[action.name].push(action.inputs.required[k]);
           }
         }
         if(action.inputs.optional.length > 0){
           for(var k in action.inputs.optional){
-            postVariables.push(action.inputs.optional[k]);
+            api.params.postVariables[action.name].push(action.inputs.optional[k]);
           }
         }
+
+        api.params.postVariables[action.name] = api.utils.arrayUniqueify(api.params.postVariables[action.name]);
       }
     }
-    api.params.postVariables = api.utils.arrayUniqueify(postVariables);
+
+    // api.params.postVariables = api.utils.arrayUniqueify(postVariables);
     return api.params.postVariables;
   }
   
